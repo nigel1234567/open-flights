@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import Header from './Header'
 import ReviewForm from './ReviewForm'
+import Review from './Review'
 import styled from 'styled-components'
 
 const Wrapper = styled.div`
@@ -35,8 +36,10 @@ const Airline = () => {
     // Construct url for api endpoint 
     const url = `/api/v1/airlines/${slug}`
 
+    // Get data from api
     axios.get(url)
     .then( resp => {
+      // Set data
       setAirline(resp.data) 
       setLoaded(true)
     })
@@ -56,9 +59,11 @@ const Airline = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
 
+    // CSRF Token
     const csrfToken = document.querySelector('[name=csrf-token]').content
     axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken
 
+    // Posting reviews
     const airline_id = airline.data.id
     axios.post('/api/v1/reviews', {review, airline_id})
     .then(resp => {
@@ -69,11 +74,28 @@ const Airline = () => {
     .catch(resp => {})
   }
 
+  // Set ratings
   const setRating = (score, e) => {
     e.preventDefault();
 
     setReview({...review, score}) // Pass through the score that was given in this method
   }
+
+  // Let reviews be undefined
+  let reviews
+
+  // Once page is loaded, then show the reviews (if not, there will be an error for trying to show reviews before page loads)
+  if (loaded && airline.included) {
+    reviews = airline.included.map( (item, index) => {
+      return (
+        <Review
+          key={index}
+          attributes={item.attributes}
+        />
+      )
+    })
+  }
+
 
   return (
     <Wrapper>
@@ -86,7 +108,7 @@ const Airline = () => {
             attributes={airline.data.attributes} 
             reviews={airline.included}
             />
-            <div className="reviews"></div>
+            {reviews}
           </Main>
         </Column>
         <Column>
